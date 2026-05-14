@@ -30,3 +30,10 @@ pub fn euclidian_distance_squared(a: &[f32], b: &[f32]) -> f32 {
     sum
 
 }
+
+fn main() {
+    let a = creusot_std::vec![1.0, 2.0, 3.0];
+    let b = creusot_std::vec![4.0, 5.0, 6.0];
+    let d = euclidian_distance_squared(&a, &b);
+    println!("huzzah: {}", d);
+}
