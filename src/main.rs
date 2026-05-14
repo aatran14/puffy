@@ -13,9 +13,7 @@ use creusot_std::prelude::*;
     a@.len() == b@.len()
 )] 
 
-#[ensures()] // verify that the result will never be negative
-
-
+#[ensures(result >= 0.0)] // verify that the result will never be negative
 pub fn euclidian_distance_squared(a: &[f32], b: &[f32]) -> f32 {
     let mut sum: f32 = 0.0;
     let mut i: usize = 0;
