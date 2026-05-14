@@ -9,7 +9,9 @@ use creusot_std::prelude::*;
 
 // method1: ecludian_distance_squared
 // with creusot annotations
-#[requires(a@.len() == b@.len())] // we need to promise that slides of a and b are the same length. it is too much headache to allow mismatched slices. 
+#[requires( // we need to promise that slides of a and b are the same length. it is too much headache to allow mismatched slices. 
+    a@.len() == b@.len()
+)] 
 
 #[ensures()] // verify that the result will never be negative
 
@@ -18,6 +20,16 @@ use creusot_std::prelude::*;
 )] 
 
 pub fn euclidian_distance_squared(a: &[f32], b: &[f32]) -> f32 {
+    let mut sum: f32 = 0.0;
+    let mut i: usize = 0;
 
+    #[invariant(sum >= 0.0)]
+    while i < a.len() {
+        let d = a[i] - b[i];
+        sum += d * d; // distance squared
+        i += 1;
+    }
+
+    sum
 
 }
