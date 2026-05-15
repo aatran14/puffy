@@ -108,3 +108,18 @@ impl Ord for Scored {
     }
 }
 
+// WAL - Write Ahead Log
+
+
+pub struct WalEntry {
+    pub seq_no: u64, // unsigned64bit, helpful for monotonically increasing counter, which we can further prove via Creusot is always ordered. The id and the values are the vector data being written.
+    pub id: Uuid,
+    pub values: Vec<f32>,
+}
+
+// #[ensures(log@.len() == old(log@.len()) + 1)]
+// ensure seq_no
+pub fn wal_append(log: &[WalEntry], entry: WalEntry) -> Vec<WalEntry> {
+    log.push(entry);
+
+}
