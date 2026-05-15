@@ -147,3 +147,20 @@ pub fn wal_replay(log: &[WalEntry]) -> bool {
     }
     true
 }
+
+
+// manifest 
+ pub struct ManifestEntry {
+      pub file_id: Uuid,
+      pub seq_no: u64,
+  }
+
+  pub struct Manifest {
+      pub namespace: Uuid,
+      pub files: Vec<ManifestEntry>,
+  }
+
+  
+pub fn manifest_add(manifest: &mut Manifest, entry: ManifestEntry) {
+    manifest.files.push(entry);
+}
