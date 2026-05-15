@@ -57,6 +57,36 @@ fn brute_force_topk(query: &[f32], vectors: &[Vector], k: usize) -> Vec<QueryRes
       
 
         // sort via heap maybe? reasonable but f32 is not Ord. Probably need a wrapper struct. I imagine RaBitQ makes this much easier.
-    
+        
     }
 }
+
+use std::collections::BinaryHeap;
+
+struct Scored {
+    distance: f32,
+    id: Uuid,
+}
+
+impl PartialEq for Scored {
+    fn eq(&self, other: &Self) -> bool {
+        self.distance == other.distance
+    }
+}
+
+impl Eq for Scored {}
+
+impl PartialOrd for Scored { 
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+
+    }
+}
+
+impl Ord for Scored {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        other.distance.partial_cmp(&self.distance)
+        .unwrap_or(std::cmp::Ordering::Equal)
+    }
+}
+
