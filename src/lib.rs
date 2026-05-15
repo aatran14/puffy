@@ -165,3 +165,24 @@ pub fn wal_replay(log: &[WalEntry]) -> bool {
 pub fn manifest_add(manifest: &mut Manifest, entry: ManifestEntry) {
     manifest.files.push(entry);
 }
+
+// wal buffer
+pub struct WalBuffer {
+    pub next_seq: u64, // unsigned64, next_seq is the counter that increments with each write.
+    pub pending: Vec<WalEntry>, // pending holds entries waiting to be flushed into S3
+}
+
+// buffer_write which takes a &mut WalBuffer, a Uuid and Vec<f32> to create a WalEntry
+// this WalEntry in addition to the current next_seq, which is then pushed into pending and increments next_seq
+// the goal is to get the server to assign sequence numbers. the caller will never touch them.
+
+pub fn buffer_write(buf: &mut WalBuffer, id: Uuid, values: Vec<f32>) {
+    let entry = WalEntry {
+    seq_no: buf.next_seq,
+    id: id,
+    values: values,
+    };
+    buf.pending.push(entry);
+    buf.next_seq += 1;
+}
+
