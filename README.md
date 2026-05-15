@@ -8,14 +8,14 @@ Creusot lives in another flavor of formal methods: deductive verification. Think
 
 As a corollary, I will use this proejct to take some field notes of what I think about Creusot/Rust.
 
-1. quickly learned that creusot doesn’t have support for PartialOrd. It had a PR but it’s from 2023 and its latest comment was from 2025. So that was odd.
+1. Quickly learned that creusot doesn’t have support for PartialOrd. It had a PR but it’s from 2023 and its latest comment was from 2025. So that was odd.
 
 2. f32 giving me more trouble. it's hard to throw into a binary heap. Learned that making a wrapper struct for it was reasonable and not insane. I imagine rabitQ resolves this in v3. 
 
 3. WAL time. The intent of the WAL is so pure and pristine.
 
-4. Still don't know what usize does.
+4. Still don't know what `usize` does.
 
-5. Always use UUIDs.
+5. Always use `UUID`s.
 
 6. 
