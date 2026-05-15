@@ -1,0 +1,76 @@
+(* #"/Users/andyt/v1_practice/src/lib.rs" 18 0 18 62 *)
+
+let%span slib = "/Users/andyt/v1_practice/src/lib.rs" 19 23 19 26
+let%span slib'0 = "/Users/andyt/v1_practice/src/lib.rs" 20 23 20 24
+let%span slib'1 = "/Users/andyt/v1_practice/src/lib.rs" 23 14 23 21
+let%span slib'2 = "/Users/andyt/v1_practice/src/lib.rs" 24 16 24 20
+let%span slib'3 = "/Users/andyt/v1_practice/src/lib.rs" 24 23 24 27
+let%span slib'4 = "/Users/andyt/v1_practice/src/lib.rs" 24 16 24 27
+let%span slib'5 = "/Users/andyt/v1_practice/src/lib.rs" 25 15 25 20
+let%span slib'6 = "/Users/andyt/v1_practice/src/lib.rs" 25 8 25 20
+let%span slib'7 = "/Users/andyt/v1_practice/src/lib.rs" 26 13 26 14
+let%span slib'8 = "/Users/andyt/v1_practice/src/lib.rs" 26 8 26 14
+let%span slib'9 = "/Users/andyt/v1_practice/src/lib.rs" 13 4 13 24
+let%span sslice = "/Users/andyt/Stuff/creusot-trial/creusot/creusot-std/src/std/slice.rs" 288 18 288 40
+
+use creusot.float.Float32
+use creusot.int.UInt64
+use creusot.slice.Slice64
+use seq.Seq
+use creusot.slice.Slice64Ops
+use creusot.prelude.Any
+
+let rec len_f32 (self_: Slice64.slice Float32.t) (return (x: UInt64.t)) = any
+  [ return (result: UInt64.t) -> {[@stop_split] [@expl:len ensures] [%#sslice] Seq.length (Slice64.view self_)
+    = UInt64.t'int result}
+    (! return {result}) ]
+
+meta "compute_max_steps" 1000000
+
+meta "select_lsinst" "all"
+
+let rec euclidian_distance_squared [#"/Users/andyt/v1_practice/src/lib.rs" 18 0 18 62] (a: Slice64.slice Float32.t)
+  (b: Slice64.slice Float32.t) (return (x: Float32.t)) =
+  {[@stop_split] [@expl:euclidian_distance_squared requires] [%#slib'9] Seq.length (Slice64.view a)
+  = Seq.length (Slice64.view b)}
+  (! bb0
+  [ bb0 = s0 [ s0 = [ &sum <- [%#slib] (0.0: Float32.t) ] s1 | s1 = [ &i <- [%#slib'0] (0: UInt64.t) ] s2 | s2 = bb2 ]
+  | bb2 = bb2
+    [ bb2 = (! s0
+      [ s0 = len_f32 [%#slib'1] {a} (fun (_x: UInt64.t) -> [ &_12 <- _x ] s1)
+      | s1 = [ &_10 <- UInt64.lt i _12 ] s2
+      | s2 = any [ br0 -> {_10 = false} (! bb7) | br1 -> {_10} (! bb4) ] ])
+      [ bb4 = s0
+        [ s0 = [ &_16 <- i ] s1
+        | s1 = [ &_17 <- Slice64Ops.length a ] s2
+        | s2 = [ &_18 <- UInt64.lt _16 _17 ] s3
+        | s3 = {[@expl:index in bounds] [%#slib'2] _18} s4
+        | s4 = Slice64Ops.get [%#slib'2] <Float32.t> {a} {_16} (fun (r: Float32.t) -> [ &_15 <- r ] s5)
+        | s5 = [ &_20 <- i ] s6
+        | s6 = [ &_21 <- Slice64Ops.length b ] s7
+        | s7 = [ &_22 <- UInt64.lt _20 _21 ] s8
+        | s8 = {[@expl:index in bounds] [%#slib'3] _22} s9
+        | s9 = Slice64Ops.get [%#slib'3] <Float32.t> {b} {_20} (fun (r: Float32.t) -> [ &_19 <- r ] s10)
+        | s10 = Float32.sub [%#slib'4] {_15} {_19} (fun (_x: Float32.t) -> [ &d <- _x ] s11)
+        | s11 = Float32.mul [%#slib'5] {d} {d} (fun (_x: Float32.t) -> [ &_23 <- _x ] s12)
+        | s12 = Float32.add [%#slib'6] {sum} {_23} (fun (_x: Float32.t) -> [ &sum <- _x ] s13)
+        | s13 = UInt64.add [%#slib'8] {i} {[%#slib'7] (1: UInt64.t)} (fun (_x: UInt64.t) -> [ &i <- _x ] s14)
+        | s14 = bb2 ] ] ]
+  | bb7 = s0 [ s0 = [ &_ret <- sum ] s1 | s1 = return {_ret} ] ]
+  [ & _ret: Float32.t = Any.any_l ()
+  | & a: Slice64.slice Float32.t = a
+  | & b: Slice64.slice Float32.t = b
+  | & sum: Float32.t = Any.any_l ()
+  | & i: UInt64.t = Any.any_l ()
+  | & _10: bool = Any.any_l ()
+  | & _12: UInt64.t = Any.any_l ()
+  | & d: Float32.t = Any.any_l ()
+  | & _15: Float32.t = Any.any_l ()
+  | & _16: UInt64.t = Any.any_l ()
+  | & _17: UInt64.t = Any.any_l ()
+  | & _18: bool = Any.any_l ()
+  | & _19: Float32.t = Any.any_l ()
+  | & _20: UInt64.t = Any.any_l ()
+  | & _21: UInt64.t = Any.any_l ()
+  | & _22: bool = Any.any_l ()
+  | & _23: Float32.t = Any.any_l () ]) [ return (result: Float32.t) -> (! return {result}) ]
