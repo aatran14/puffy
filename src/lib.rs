@@ -189,3 +189,17 @@ pub fn buffer_write(buf: &mut WalBuffer, id: Uuid, values: Vec<f32>) {
     buf.next_seq += 1;
 }
 
+// buffer_flush into s3
+  #[requires(buf.pending@.len() > 0)]
+  #[trusted] // remove when S3 works
+  #[cfg(not(creusot))]
+  pub fn buffer_flush(buf: &mut WalBuffer, manifest: &mut Manifest) {
+      let file_id = Uuid::new_v4();
+      let seq_no = buf.pending.last().unwrap().seq_no;
+      manifest_add(manifest, ManifestEntry { file_id, seq_no });
+      buf.pending.clear();
+  }
+
+
+
+
