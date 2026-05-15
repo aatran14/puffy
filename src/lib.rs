@@ -160,7 +160,8 @@ pub fn wal_replay(log: &[WalEntry]) -> bool {
       pub files: Vec<ManifestEntry>,
   }
 
-  
+// this annotation says that if the manifest is empty OR the new entry seq_no must be bigger than the last one in the list. 
+#[requires(manifest.files@.len() == 0 || entry.seq_no@ > manifest.files@[manifest.files@.len() - 1].seq_no@)]  
 pub fn manifest_add(manifest: &mut Manifest, entry: ManifestEntry) {
     manifest.files.push(entry);
 }
