@@ -55,7 +55,7 @@ use std::collections::BinaryHeap;
 #[requires(vectors@.len() > 0)]
 #[trusted]
 #[cfg(not(creusot))]
-fn brute_force_topk(query: &[f32], vectors: &[Vector], k: usize) -> Vec<QueryResult> {
+pub fn brute_force_topk(query: &[f32], vectors: &[Vector], k: usize) -> Vec<QueryResult> {
     let mut heap = BinaryHeap::new();
 
     for i in 0..vectors.len() {
@@ -200,6 +200,7 @@ pub fn buffer_write(buf: &mut WalBuffer, id: Uuid, values: Vec<f32>) {
       buf.pending.clear();
   }
 
+  // 
 
 
 
