@@ -12,10 +12,10 @@ As a corollary, I will use this proejct to take some field notes of what I think
 
 2. f32 giving me more trouble. it's hard to throw into a binary heap. Learned that making a wrapper struct for it was reasonable and not insane. I imagine rabitQ resolves this in v3. 
 
-3. WAL time. The intent of the WAL is so pure and pristine.
+3. The intent of the WAL is so pure and pristine.
 
 4. Still don't know what `usize` does.
 
 5. Always use `UUID`s.
 
-6. 
+6. At around 300 loc, my mental model of the variables and signatures experienced breakdown. It didn't harm the high level overview, but I was losing all sense of &mut. Then I saw Creusot's `*buf` / `^buf` notation.
