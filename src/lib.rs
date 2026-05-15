@@ -176,6 +176,9 @@ pub struct WalBuffer {
 // this WalEntry in addition to the current next_seq, which is then pushed into pending and increments next_seq
 // the goal is to get the server to assign sequence numbers. the caller will never touch them.
 
+// #[ensures(buf.next_seq@ == old(buf.next_seq@) + 1)] // apparently creusot doesn't use old()
+#[requires(buf.next_seq@ < u64::MAX@)]
+#[ensures((^buf).next_seq@ == (*buf).next_seq@ + 1)]
 pub fn buffer_write(buf: &mut WalBuffer, id: Uuid, values: Vec<f32>) {
     let entry = WalEntry {
     seq_no: buf.next_seq,
