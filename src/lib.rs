@@ -1,5 +1,6 @@
-  #![cfg_attr(not(creusot), feature(stmt_expr_attributes))]
-  #![cfg_attr(not(creusot), feature(proc_macro_hygiene))]
+#![cfg_attr(not(creusot), feature(stmt_expr_attributes))]
+#![cfg_attr(not(creusot), feature(proc_macro_hygiene))]
+use serde::{Serialize, Deserialize};
 
 // need a way to compute how far two vectors are. in a vector db, every search compares a query vector stored against the stored vectors to find knn or some subset of that.
 
@@ -112,7 +113,7 @@ impl Ord for Scored {
 
 // WAL - Write Ahead Log
 
-
+#[derive(Serialize, Deserialize)]
 pub struct WalEntry {
     pub seq_no: u64, // unsigned64bit, helpful for monotonically increasing counter, which we can further prove via Creusot is always ordered. The id and the values are the vector data being written.
     pub id: Uuid,
@@ -217,4 +218,13 @@ pub fn query(query: &[f32], buf: &WalBuffer, flushed: &[Vector], k: usize) -> Ve
     brute_force_topk(query, &all, k)
 }
 
+// serialization to the wal. this is simple. when i want to reduce the 
+ #[cfg(not(creusot))]
+  pub fn serialize_wal(entries: &[WalEntry]) -> Vec<u8> {
+      serde_json::to_vec(entries).unwrap()
+  }
 
+  #[cfg(not(creusot))]
+  pub fn deserialize_wal(bytes: &[u8]) -> Vec<WalEntry> {
+      serde_json::from_slice(bytes).unwrap()
+  }
