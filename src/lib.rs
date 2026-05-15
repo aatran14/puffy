@@ -201,6 +201,20 @@ pub fn buffer_write(buf: &mut WalBuffer, id: Uuid, values: Vec<f32>) {
   }
 
   // 
+#[cfg(not(creusot))]
+pub fn query(query: &[f32], buf: &WalBuffer, flushed: &[Vector], k: usize) -> Vec<QueryResult> {
+    let mut all: Vec<Vector> = Vec::new();
 
+    for v in flushed { // loop through flushed, clone each into all
+        all.push(Vector { id: v.id, values: v.values.clone() });
+    }
+
+    for entry in &buf.pending { // loop through buf.pending, convert each WalEntry to Vector, push into all
+        all.push(Vector { id: entry.id, values: entry.values.clone() });
+    }
+
+
+    brute_force_topk(query, &all, k)
+}
 
 
