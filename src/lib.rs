@@ -218,7 +218,7 @@ pub fn query(query: &[f32], buf: &WalBuffer, flushed: &[Vector], k: usize) -> Ve
     brute_force_topk(query, &all, k)
 }
 
-// serialization to the wal. this is simple. when i want to reduce the 
+// serialization to the wal. simple over complex.
  #[cfg(not(creusot))]
   pub fn serialize_wal(entries: &[WalEntry]) -> Vec<u8> {
       serde_json::to_vec(entries).unwrap()
@@ -228,3 +228,25 @@ pub fn query(query: &[f32], buf: &WalBuffer, flushed: &[Vector], k: usize) -> Ve
   pub fn deserialize_wal(bytes: &[u8]) -> Vec<WalEntry> {
       serde_json::from_slice(bytes).unwrap()
   }
+
+// the model is that we have multiple WAL files sitting on S3. Each one is just a batch of vectors. Compaction would merge them into one sorted file (an SS-table) so queries read fewer files.
+// simple: dump all entires into one Vec, sort by id, deduplicate. This is one pass and easy to understand. O(n log n)
+// complex: tiered compaction. multiple levels, size ratios, partial merges. keep the hot data in smaller levels. Better at scale.
+
+// > simple should be good enough for 100ms per roundtrip. both achieve similar order of magnitude of functionality while simple remaining well... simple.
+
+
+#[cfg(not(creusot))]
+pub fn compact(wal_files: &[Vec<WalEntry>]) -> Vec<WalEntry> {
+    // 1. flatten all the entries into one Vec<WalEntry>
+    // 2. deducplicate by id. keep the ntry with the highest seq_no for each UUID.
+    // 3. sort by seq_no. 
+    
+
+    // 2. probably means use a HashMap for the deudplicate step.
+    let mut all: Vec<WalEntry> = Vec::new();
+    for i in 0..wal_files {
+        
+    }
+}
+
