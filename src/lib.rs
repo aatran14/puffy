@@ -45,37 +45,54 @@ pub struct QueryResult {
     pub distance: f32,
 }
 
-// If structs are correct, then follow through with brute_force_topk function
-fn brute_force_topk(query: &[f32], vectors: &[Vector], k: usize) -> Vec<QueryResult> {
-    let mut results: Vec<QueryResult> = Vec::new();
-    for i in 0..vectors.len() {
-        let dist = euclidian_distance_squared(query, &vectors[i].values);
-        results.push(QueryResult {
-            id: vectors[i].id,
-            distance: dist,
-        })
-      
-
-        // sort via heap maybe? reasonable but f32 is not Ord. Probably need a wrapper struct. I imagine RaBitQ makes this much easier.
-        
-    }
-}
-
 use std::collections::BinaryHeap;
 
+
+// If structs are correct, then follow through with brute_force_topk function
+#[requires(k@ > 0)]
+#[requires(vectors@.len() > 0)]
+#[trusted]
+#[cfg(not(creusot))]
+fn brute_force_topk(query: &[f32], vectors: &[Vector], k: usize) -> Vec<QueryResult> {
+    let mut heap = BinaryHeap::new();
+
+    for i in 0..vectors.len() {
+        let dist = euclidian_distance_squared(query, &vectors[i].values);
+        // push into heap
+        heap.push(Scored {distance: dist, id: vectors[i].id});
+    }
+
+    let mut results: Vec<QueryResult> = Vec::new();
+    let count = k.min(heap.len());
+    let mut j: usize = 0;
+    while j < count {
+        let s: Scored = heap.pop().unwrap();
+        results.push(QueryResult {id: s.id, distance: s.distance});
+        j += 1;
+    }
+
+    results
+
+    
+}
+
+#[cfg(not(creusot))]
 struct Scored {
     distance: f32,
     id: Uuid,
 }
 
+#[cfg(not(creusot))]
 impl PartialEq for Scored {
     fn eq(&self, other: &Self) -> bool {
         self.distance == other.distance
     }
 }
 
+#[cfg(not(creusot))]
 impl Eq for Scored {}
 
+#[cfg(not(creusot))]
 impl PartialOrd for Scored { 
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         Some(self.cmp(other))
@@ -83,6 +100,7 @@ impl PartialOrd for Scored {
     }
 }
 
+#[cfg(not(creusot))]
 impl Ord for Scored {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         other.distance.partial_cmp(&self.distance)
