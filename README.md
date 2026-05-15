@@ -6,4 +6,4 @@ As a corollary, I will use this proejct to take some field notes of what I think
 
 2. f32 giving me more trouble. it's hard to throw into a binary heap. Learned that making a wrapper struct for it was reasonable and not insane. I imagine rabitQ resolves this in v3. 
 
-3.
+3. WAL time
