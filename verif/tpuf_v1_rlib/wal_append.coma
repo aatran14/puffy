@@ -1,0 +1,179 @@
+(* #"/Users/andyt/v1_practice/src/lib.rs" 123 0 123 59 *)
+
+let%span slib = "/Users/andyt/v1_practice/src/lib.rs" 124 4 124 19
+let%span slib'0 = "/Users/andyt/v1_practice/src/lib.rs" 123 18 123 21
+let%span slib'1 = "/Users/andyt/v1_practice/src/lib.rs" 123 43 123 48
+let%span slib'2 = "/Users/andyt/v1_practice/src/lib.rs" 122 11 122 72
+let%span svec = "/Users/andyt/Stuff/creusot-trial/creusot/creusot-std/src/std/vec.rs" 117 21 117 25
+let%span svec'0 = "/Users/andyt/Stuff/creusot-trial/creusot/creusot-std/src/std/vec.rs" 117 27 117 28
+let%span svec'1 = "/Users/andyt/Stuff/creusot-trial/creusot/creusot-std/src/std/vec.rs" 116 18 116 48
+let%span svec'2 = "/Users/andyt/Stuff/creusot-trial/creusot/creusot-std/src/std/vec.rs" 16 14 16 41
+let%span svec'3 = "/Users/andyt/Stuff/creusot-trial/creusot/creusot-std/src/std/vec.rs" 87 20 87 30
+let%span sinvariant = "/Users/andyt/Stuff/creusot-trial/creusot/creusot-std/src/invariant.rs" 93 20 93 44
+let%span sinvariant'0 = "/Users/andyt/Stuff/creusot-trial/creusot/creusot-std/src/invariant.rs" 85 8 85 18
+let%span sord = "/Users/andyt/Stuff/creusot-trial/creusot/creusot-std/src/logic/ord.rs" 162 41 162 102
+let%span sord'0 = "/Users/andyt/Stuff/creusot-trial/creusot/creusot-std/src/logic/ord.rs" 168 41 168 99
+let%span sord'1 = "/Users/andyt/Stuff/creusot-trial/creusot/creusot-std/src/logic/ord.rs" 174 41 174 99
+let%span sord'2 = "/Users/andyt/Stuff/creusot-trial/creusot/creusot-std/src/logic/ord.rs" 180 41 180 102
+let%span sord'3 = "/Users/andyt/Stuff/creusot-trial/creusot/creusot-std/src/logic/ord.rs" 186 41 186 83
+let%span sord'4 = "/Users/andyt/Stuff/creusot-trial/creusot/creusot-std/src/logic/ord.rs" 192 42 192 59
+let%span sord'5 = "/Users/andyt/Stuff/creusot-trial/creusot/creusot-std/src/logic/ord.rs" 193 42 193 59
+let%span sord'6 = "/Users/andyt/Stuff/creusot-trial/creusot/creusot-std/src/logic/ord.rs" 194 41 194 58
+let%span sord'7 = "/Users/andyt/Stuff/creusot-trial/creusot/creusot-std/src/logic/ord.rs" 200 42 200 83
+let%span sord'8 = "/Users/andyt/Stuff/creusot-trial/creusot/creusot-std/src/logic/ord.rs" 201 41 201 85
+let%span sord'9 = "/Users/andyt/Stuff/creusot-trial/creusot/creusot-std/src/logic/ord.rs" 207 42 207 86
+let%span sord'10 = "/Users/andyt/Stuff/creusot-trial/creusot/creusot-std/src/logic/ord.rs" 208 41 208 82
+let%span sord'11 = "/Users/andyt/Stuff/creusot-trial/creusot/creusot-std/src/logic/ord.rs" 214 41 214 97
+let%span sord'12 = "/Users/andyt/Stuff/creusot-trial/creusot/creusot-std/src/logic/ord.rs" 296 16 302 17
+let%span sseq = "/Users/andyt/Stuff/creusot-trial/creusot/creusot-std/src/logic/seq.rs" 938 20 938 91
+
+use creusot.prelude.MutBorrow
+use creusot.int.UInt64
+use seq.Seq
+use creusot.prelude.Any
+use int.Int
+
+type t_Vec_WalEntry_Global
+
+type t_Uuid
+
+type t_Vec_f32_Global
+
+type t_WalEntry = { seq_no: UInt64.t; id: t_Uuid; values: t_Vec_f32_Global }
+
+predicate inv_Uuid (_1: t_Uuid)
+
+predicate inv_WalEntry (_1: t_WalEntry)
+
+axiom inv_axiom [@rewrite]: forall x: t_WalEntry [inv_WalEntry x]. inv_WalEntry x = inv_Uuid x.id
+
+predicate invariant_ref_WalEntry [@inline:trivial] (self: t_WalEntry) = [%#sinvariant'0] inv_WalEntry self
+
+meta "rewrite_def" predicate invariant_ref_WalEntry
+
+predicate inv_ref_WalEntry [@inline:trivial] (_1: t_WalEntry) = invariant_ref_WalEntry _1
+
+meta "rewrite_def" predicate inv_ref_WalEntry
+
+predicate invariant_Seq_WalEntry [@inline:trivial] (self: Seq.seq t_WalEntry) =
+  [%#sseq] forall i: int. 0 <= i /\ i < Seq.length self -> inv_ref_WalEntry (Seq.get self i)
+
+meta "rewrite_def" predicate invariant_Seq_WalEntry
+
+predicate inv_Seq_WalEntry [@inline:trivial] (_1: Seq.seq t_WalEntry) = invariant_Seq_WalEntry _1
+
+meta "rewrite_def" predicate inv_Seq_WalEntry
+
+constant const_MAX: UInt64.t = (18446744073709551615: UInt64.t)
+
+function view_Vec_WalEntry_Global (self: t_Vec_WalEntry_Global) : Seq.seq t_WalEntry
+
+axiom view_Vec_WalEntry_Global_spec:
+  forall self: t_Vec_WalEntry_Global [view_Vec_WalEntry_Global self]. [%#svec'2] Seq.length (view_Vec_WalEntry_Global self)
+    <= UInt64.t'int const_MAX
+
+predicate invariant_Vec_WalEntry_Global (self: t_Vec_WalEntry_Global) =
+  [%#svec'3] inv_Seq_WalEntry (view_Vec_WalEntry_Global self)
+
+predicate inv_Vec_WalEntry_Global (_1: t_Vec_WalEntry_Global)
+
+axiom inv_axiom'0: forall x: t_Vec_WalEntry_Global [inv_Vec_WalEntry_Global x]. inv_Vec_WalEntry_Global x
+    -> invariant_Vec_WalEntry_Global x
+
+predicate invariant_refmut_Vec_WalEntry_Global [@inline:trivial] (self: MutBorrow.t t_Vec_WalEntry_Global) =
+  [%#sinvariant] inv_Vec_WalEntry_Global self.current /\ inv_Vec_WalEntry_Global self.final
+
+meta "rewrite_def" predicate invariant_refmut_Vec_WalEntry_Global
+
+predicate inv_refmut_Vec_WalEntry_Global [@inline:trivial] (_1: MutBorrow.t t_Vec_WalEntry_Global) =
+  invariant_refmut_Vec_WalEntry_Global _1
+
+meta "rewrite_def" predicate inv_refmut_Vec_WalEntry_Global
+
+let rec push_WalEntry (self_: MutBorrow.t t_Vec_WalEntry_Global) (v: t_WalEntry) (return (x: ())) =
+  {[@stop_split] [@expl:push_WalEntry requires] ([@stop_split] [@expl:push 'self_' type invariant] [%#svec] inv_refmut_Vec_WalEntry_Global self_)
+  /\ ([@stop_split] [@expl:push 'v' type invariant] [%#svec'0] inv_WalEntry v)}
+  any
+  [ return (result: ()) -> {[@stop_split] [@expl:push ensures] [%#svec'1] view_Vec_WalEntry_Global self_.final
+    = Seq.snoc (view_Vec_WalEntry_Global self_.current) v}
+    (! return {result}) ]
+
+predicate resolve_refmut_Vec_WalEntry_Global [@inline:trivial] (_1: MutBorrow.t t_Vec_WalEntry_Global) =
+  _1.final = _1.current
+
+meta "rewrite_def" predicate resolve_refmut_Vec_WalEntry_Global
+
+type t_Ordering = Less | Equal | Greater
+
+function cmp_log_u64 (self: UInt64.t) (o: UInt64.t) : t_Ordering = [%#sord'12] if UInt64.lt self o then
+    Less
+  else
+    if self = o then Equal else Greater
+
+
+function eq_cmp_u64 (x: UInt64.t) (y: UInt64.t) : ()
+
+axiom eq_cmp_u64_spec: forall x: UInt64.t, y: UInt64.t. [%#sord'11] (x = y) = (cmp_log_u64 x y = Equal)
+
+function antisym2_u64 (x: UInt64.t) (y: UInt64.t) : ()
+
+axiom antisym2_u64_spec: forall x: UInt64.t, y: UInt64.t. ([%#sord'9] cmp_log_u64 x y = Greater)
+    -> ([%#sord'10] cmp_log_u64 y x = Less)
+
+function antisym1_u64 (x: UInt64.t) (y: UInt64.t) : ()
+
+axiom antisym1_u64_spec: forall x: UInt64.t, y: UInt64.t. ([%#sord'7] cmp_log_u64 x y = Less)
+    -> ([%#sord'8] cmp_log_u64 y x = Greater)
+
+function trans_u64 (x: UInt64.t) (y: UInt64.t) (z: UInt64.t) (o: t_Ordering) : ()
+
+axiom trans_u64_spec: forall x: UInt64.t, y: UInt64.t, z: UInt64.t, o: t_Ordering. ([%#sord'4] cmp_log_u64 x y = o)
+    -> ([%#sord'5] cmp_log_u64 y z = o) -> ([%#sord'6] cmp_log_u64 x z = o)
+
+function refl_u64 (x: UInt64.t) : ()
+
+axiom refl_u64_spec: forall x: UInt64.t. [%#sord'3] cmp_log_u64 x x = Equal
+
+function cmp_gt_log_u64 (x: UInt64.t) (y: UInt64.t) : ()
+
+axiom cmp_gt_log_u64_spec: forall x: UInt64.t, y: UInt64.t. [%#sord'2] UInt64.gt x y = (cmp_log_u64 x y = Greater)
+
+function cmp_ge_log_u64 (x: UInt64.t) (y: UInt64.t) : ()
+
+axiom cmp_ge_log_u64_spec: forall x: UInt64.t, y: UInt64.t. [%#sord'1] UInt64.ge x y = (cmp_log_u64 x y <> Less)
+
+function cmp_lt_log_u64 (x: UInt64.t) (y: UInt64.t) : ()
+
+axiom cmp_lt_log_u64_spec: forall x: UInt64.t, y: UInt64.t. [%#sord'0] UInt64.lt x y = (cmp_log_u64 x y = Less)
+
+function cmp_le_log_u64 (x: UInt64.t) (y: UInt64.t) : ()
+
+axiom cmp_le_log_u64_spec: forall x: UInt64.t, y: UInt64.t. [%#sord] UInt64.le x y = (cmp_log_u64 x y <> Greater)
+
+meta "compute_max_steps" 1000000
+
+meta "select_lsinst" "all"
+
+let rec wal_append [#"/Users/andyt/v1_practice/src/lib.rs" 123 0 123 59] (log: MutBorrow.t t_Vec_WalEntry_Global)
+  (entry: t_WalEntry) (return (x: ())) =
+  {[@stop_split] [@expl:wal_append requires] ([@stop_split] [@expl:wal_append 'log' type invariant] [%#slib'0] inv_refmut_Vec_WalEntry_Global log)
+  /\ ([@stop_split] [@expl:wal_append 'entry' type invariant] [%#slib'1] inv_WalEntry entry)
+  /\ ([@stop_split] [@expl:wal_append requires] [%#slib'2] Seq.length (view_Vec_WalEntry_Global log.current) = 0
+  \/ UInt64.gt entry.seq_no (Seq.get (view_Vec_WalEntry_Global log.current) (Seq.length (view_Vec_WalEntry_Global log.current)
+  - 1)).seq_no)}
+  (! bb0
+  [ bb0 = s0
+    [ s0 = MutBorrow.borrow_final <t_Vec_WalEntry_Global> {log.current} {MutBorrow.get_id log}
+        (fun (_bor: MutBorrow.t t_Vec_WalEntry_Global) ->
+          [ &_7 <- _bor ] -{inv_Vec_WalEntry_Global _bor.final}-
+          [ &log <- { log with current = _bor.final } ] s1)
+      [ _ck -> (! {[@expl:type invariant] inv_Vec_WalEntry_Global log.current} any) ]
+    | s1 = push_WalEntry [%#slib] {_7} {entry} (fun (_x: ()) -> [ &_6 <- _x ] s2)
+    | s2 = s3 [ _ck -> (! {[@expl:type invariant] inv_refmut_Vec_WalEntry_Global log} any) ]
+    | s3 = -{resolve_refmut_Vec_WalEntry_Global log}- s4
+    | s4 = return {_ret} ] ]
+  [ & _ret: () = Any.any_l ()
+  | & log: MutBorrow.t t_Vec_WalEntry_Global = log
+  | & entry: t_WalEntry = entry
+  | & _6: () = Any.any_l ()
+  | & _7: MutBorrow.t t_Vec_WalEntry_Global = Any.any_l () ]) [ return (result: ()) -> (! return {result}) ]

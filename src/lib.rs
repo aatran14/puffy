@@ -119,7 +119,7 @@ pub struct WalEntry {
 
 // #[ensures(log@.len() == old(log@.len()) + 1)]
 // ensure seq_no
-pub fn wal_append(log: &[WalEntry], entry: WalEntry) -> Vec<WalEntry> {
+#[requires(log@.len() == 0 || entry.seq_no > log@[log@.len() - 1].seq_no)]
+pub fn wal_append(log: &mut Vec<WalEntry>, entry: WalEntry) {
     log.push(entry);
-
 }
