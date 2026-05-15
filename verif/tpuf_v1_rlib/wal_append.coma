@@ -1,9 +1,9 @@
-(* #"/Users/andyt/v1_practice/src/lib.rs" 123 0 123 59 *)
+(* #"/Users/andyt/v1_practice/src/lib.rs" 125 0 125 59 *)
 
-let%span slib = "/Users/andyt/v1_practice/src/lib.rs" 124 4 124 19
-let%span slib'0 = "/Users/andyt/v1_practice/src/lib.rs" 123 18 123 21
-let%span slib'1 = "/Users/andyt/v1_practice/src/lib.rs" 123 43 123 48
-let%span slib'2 = "/Users/andyt/v1_practice/src/lib.rs" 122 11 122 72
+let%span slib = "/Users/andyt/v1_practice/src/lib.rs" 126 4 126 19
+let%span slib'0 = "/Users/andyt/v1_practice/src/lib.rs" 125 18 125 21
+let%span slib'1 = "/Users/andyt/v1_practice/src/lib.rs" 125 43 125 48
+let%span slib'2 = "/Users/andyt/v1_practice/src/lib.rs" 124 11 124 72
 let%span svec = "/Users/andyt/Stuff/creusot-trial/creusot/creusot-std/src/std/vec.rs" 117 21 117 25
 let%span svec'0 = "/Users/andyt/Stuff/creusot-trial/creusot/creusot-std/src/std/vec.rs" 117 27 117 28
 let%span svec'1 = "/Users/andyt/Stuff/creusot-trial/creusot/creusot-std/src/std/vec.rs" 116 18 116 48
@@ -154,7 +154,7 @@ meta "compute_max_steps" 1000000
 
 meta "select_lsinst" "all"
 
-let rec wal_append [#"/Users/andyt/v1_practice/src/lib.rs" 123 0 123 59] (log: MutBorrow.t t_Vec_WalEntry_Global)
+let rec wal_append [#"/Users/andyt/v1_practice/src/lib.rs" 125 0 125 59] (log: MutBorrow.t t_Vec_WalEntry_Global)
   (entry: t_WalEntry) (return (x: ())) =
   {[@stop_split] [@expl:wal_append requires] ([@stop_split] [@expl:wal_append 'log' type invariant] [%#slib'0] inv_refmut_Vec_WalEntry_Global log)
   /\ ([@stop_split] [@expl:wal_append 'entry' type invariant] [%#slib'1] inv_WalEntry entry)

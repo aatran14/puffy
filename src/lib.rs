@@ -1,3 +1,5 @@
+  #![cfg_attr(not(creusot), feature(stmt_expr_attributes))]
+  #![cfg_attr(not(creusot), feature(proc_macro_hygiene))]
 
 // need a way to compute how far two vectors are. in a vector db, every search compares a query vector stored against the stored vectors to find knn or some subset of that.
 
@@ -119,7 +121,29 @@ pub struct WalEntry {
 
 // #[ensures(log@.len() == old(log@.len()) + 1)]
 // ensure seq_no
-#[requires(log@.len() == 0 || entry.seq_no > log@[log@.len() - 1].seq_no)]
+#[requires(log@.len() == 0 || entry.seq_no > log@[log@.len() - 1].seq_no)] // &mut Vec<WalEntry> beucase it modifies the log (push)
 pub fn wal_append(log: &mut Vec<WalEntry>, entry: WalEntry) {
     log.push(entry);
+}
+
+
+// Interesting! Creusot couldn't fully verify the wal_replay without more help. I did see that onl 8/9 goals proved, but one failed.
+// alpha: Need a way to see what is true as each step of the while loop.
+// pub fn wal_replay(log: &mut &[WalEntry]) -> bool { // &[WalEntry] because it only reads the log (chcecks if it sorted)
+pub fn wal_replay(log: &[WalEntry]) -> bool {
+    let mut i: usize = 1; // what even is usize and why do we even use it.
+
+
+// alpha: prover needs to know what's true at each step of the loop
+// for every integer j where 1 <= j <= where we've checked so far 
+// it's true that entry j has a bigger seq_no than entry j-1
+#[invariant(i@ >=1)]
+#[invariant(forall<j: Int> 1 <= j && j < i@ ==> log@[j].seq_no@ > log@[j - 1].seq_no@)]
+    while i < log.len() {
+        if log[i].seq_no <= log[i-1].seq_no {
+            return false;
+        }
+        i += 1;
+    }
+    true
 }

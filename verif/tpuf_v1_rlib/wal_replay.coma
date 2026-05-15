@@ -1,0 +1,130 @@
+(* #"/Users/andyt/v1_practice/src/lib.rs" 133 0 133 43 *)
+
+let%span slib = "/Users/andyt/v1_practice/src/lib.rs" 134 23 134 24
+let%span slib'0 = "/Users/andyt/v1_practice/src/lib.rs" 142 14 142 23
+let%span slib'1 = "/Users/andyt/v1_practice/src/lib.rs" 141 12 141 85
+let%span slib'2 = "/Users/andyt/v1_practice/src/lib.rs" 140 12 140 18
+let%span slib'3 = "/Users/andyt/v1_practice/src/lib.rs" 143 11 143 17
+let%span slib'4 = "/Users/andyt/v1_practice/src/lib.rs" 143 11 143 24
+let%span slib'5 = "/Users/andyt/v1_practice/src/lib.rs" 143 34 143 35
+let%span slib'6 = "/Users/andyt/v1_practice/src/lib.rs" 143 32 143 35
+let%span slib'7 = "/Users/andyt/v1_practice/src/lib.rs" 143 28 143 36
+let%span slib'8 = "/Users/andyt/v1_practice/src/lib.rs" 143 28 143 43
+let%span slib'9 = "/Users/andyt/v1_practice/src/lib.rs" 146 13 146 14
+let%span slib'10 = "/Users/andyt/v1_practice/src/lib.rs" 146 8 146 14
+let%span slib'11 = "/Users/andyt/v1_practice/src/lib.rs" 144 19 144 24
+let%span slib'12 = "/Users/andyt/v1_practice/src/lib.rs" 148 4 148 8
+let%span slib'13 = "/Users/andyt/v1_practice/src/lib.rs" 133 18 133 21
+let%span sslice = "/Users/andyt/Stuff/creusot-trial/creusot/creusot-std/src/std/slice.rs" 289 16 289 20
+let%span sslice'0 = "/Users/andyt/Stuff/creusot-trial/creusot/creusot-std/src/std/slice.rs" 288 18 288 40
+let%span sslice'1 = "/Users/andyt/Stuff/creusot-trial/creusot/creusot-std/src/std/slice.rs" 17 20 17 30
+let%span sinvariant = "/Users/andyt/Stuff/creusot-trial/creusot/creusot-std/src/invariant.rs" 85 8 85 18
+let%span sseq = "/Users/andyt/Stuff/creusot-trial/creusot/creusot-std/src/logic/seq.rs" 938 20 938 91
+
+use creusot.int.UInt64
+use creusot.slice.Slice64
+use seq.Seq
+use creusot.slice.Slice64Ops
+use creusot.prelude.Any
+use int.Int
+
+type t_Uuid
+
+type t_Vec_f32_Global
+
+type t_WalEntry = { seq_no: UInt64.t; id: t_Uuid; values: t_Vec_f32_Global }
+
+predicate inv_Uuid (_1: t_Uuid)
+
+predicate inv_WalEntry (_1: t_WalEntry)
+
+axiom inv_axiom [@rewrite]: forall x: t_WalEntry [inv_WalEntry x]. inv_WalEntry x = inv_Uuid x.id
+
+predicate invariant_ref_WalEntry [@inline:trivial] (self: t_WalEntry) = [%#sinvariant] inv_WalEntry self
+
+meta "rewrite_def" predicate invariant_ref_WalEntry
+
+predicate inv_ref_WalEntry [@inline:trivial] (_1: t_WalEntry) = invariant_ref_WalEntry _1
+
+meta "rewrite_def" predicate inv_ref_WalEntry
+
+predicate invariant_Seq_WalEntry [@inline:trivial] (self: Seq.seq t_WalEntry) =
+  [%#sseq] forall i: int. 0 <= i /\ i < Seq.length self -> inv_ref_WalEntry (Seq.get self i)
+
+meta "rewrite_def" predicate invariant_Seq_WalEntry
+
+predicate inv_Seq_WalEntry [@inline:trivial] (_1: Seq.seq t_WalEntry) = invariant_Seq_WalEntry _1
+
+meta "rewrite_def" predicate inv_Seq_WalEntry
+
+predicate invariant_slice_WalEntry (self: Slice64.slice t_WalEntry) = [%#sslice'1] inv_Seq_WalEntry (Slice64.view self)
+
+predicate inv_slice_WalEntry [@inline:trivial] (_1: Slice64.slice t_WalEntry) = invariant_slice_WalEntry _1
+
+meta "rewrite_def" predicate inv_slice_WalEntry
+
+predicate invariant_ref_slice_WalEntry [@inline:trivial] (self: Slice64.slice t_WalEntry) =
+  [%#sinvariant] inv_slice_WalEntry self
+
+meta "rewrite_def" predicate invariant_ref_slice_WalEntry
+
+predicate inv_ref_slice_WalEntry [@inline:trivial] (_1: Slice64.slice t_WalEntry) = invariant_ref_slice_WalEntry _1
+
+meta "rewrite_def" predicate inv_ref_slice_WalEntry
+
+let rec len_WalEntry (self_: Slice64.slice t_WalEntry) (return (x: UInt64.t)) =
+  {[@stop_split] [@expl:len 'self_' type invariant] [%#sslice] inv_ref_slice_WalEntry self_}
+  any
+  [ return (result: UInt64.t) -> {[@stop_split] [@expl:len ensures] [%#sslice'0] Seq.length (Slice64.view self_)
+    = UInt64.t'int result}
+    (! return {result}) ]
+
+meta "compute_max_steps" 1000000
+
+meta "select_lsinst" "all"
+
+let rec wal_replay [#"/Users/andyt/v1_practice/src/lib.rs" 133 0 133 43] (log: Slice64.slice t_WalEntry)
+  (return (x: bool)) = {[@stop_split] [@expl:wal_replay 'log' type invariant] [%#slib'13] inv_ref_slice_WalEntry log}
+  (! bb0
+  [ bb0 = s0 [ s0 = [ &i <- [%#slib] (1: UInt64.t) ] s1 | s1 = bb1 ]
+  | bb1 = bb1
+    [ bb1 = {[@expl:loop invariant #0] [%#slib'2] UInt64.t'int i >= 1}
+      {[@expl:loop invariant #1] [%#slib'1] forall j: int. 1 <= j /\ j < UInt64.t'int i
+        -> UInt64.t'int (Seq.get (Slice64.view log) j).seq_no
+        > UInt64.t'int (Seq.get (Slice64.view log) (j - 1)).seq_no}
+      (! s0)
+      [ s0 = len_WalEntry [%#slib'0] {log} (fun (_x: UInt64.t) -> [ &_13 <- _x ] s1)
+      | s1 = [ &_11 <- UInt64.lt i _13 ] s2
+      | s2 = any [ br0 -> {_11 = false} (! bb9) | br1 -> {_11} (! bb4) ] ]
+      [ bb4 = s0
+        [ s0 = [ &_18 <- i ] s1
+        | s1 = [ &_19 <- Slice64Ops.length log ] s2
+        | s2 = [ &_20 <- UInt64.lt _18 _19 ] s3
+        | s3 = {[@expl:index in bounds] [%#slib'3] _20} s4
+        | s4 = Slice64Ops.get [%#slib'4] <t_WalEntry> {log} {_18} (fun (r: t_WalEntry) -> [ &_17 <- r.seq_no ] s5)
+        | s5 = UInt64.sub [%#slib'6] {i} {[%#slib'5] (1: UInt64.t)} (fun (_x: UInt64.t) -> [ &_22 <- _x ] s6)
+        | s6 = [ &_24 <- Slice64Ops.length log ] s7
+        | s7 = [ &_25 <- UInt64.lt _22 _24 ] s8
+        | s8 = {[@expl:index in bounds] [%#slib'7] _25} s9
+        | s9 = Slice64Ops.get [%#slib'8] <t_WalEntry> {log} {_22} (fun (r: t_WalEntry) -> [ &_21 <- r.seq_no ] s10)
+        | s10 = [ &_16 <- UInt64.le _17 _21 ] s11
+        | s11 = any [ br0 -> {_16 = false} (! bb8) | br1 -> {_16} (! bb7) ] ]
+      | bb8 = s0
+        [ s0 = UInt64.add [%#slib'10] {i} {[%#slib'9] (1: UInt64.t)} (fun (_x: UInt64.t) -> [ &i <- _x ] s1)
+        | s1 = bb1 ] ] ]
+  | bb7 = s0 [ s0 = [ &_ret <- [%#slib'11] false ] s1 | s1 = return {_ret} ]
+  | bb9 = s0 [ s0 = [ &_ret <- [%#slib'12] true ] s1 | s1 = return {_ret} ] ]
+  [ & _ret: bool = Any.any_l ()
+  | & log: Slice64.slice t_WalEntry = log
+  | & i: UInt64.t = Any.any_l ()
+  | & _11: bool = Any.any_l ()
+  | & _13: UInt64.t = Any.any_l ()
+  | & _16: bool = Any.any_l ()
+  | & _17: UInt64.t = Any.any_l ()
+  | & _18: UInt64.t = Any.any_l ()
+  | & _19: UInt64.t = Any.any_l ()
+  | & _20: bool = Any.any_l ()
+  | & _21: UInt64.t = Any.any_l ()
+  | & _22: UInt64.t = Any.any_l ()
+  | & _24: UInt64.t = Any.any_l ()
+  | & _25: bool = Any.any_l () ]) [ return (result: bool) -> (! return {result}) ]
