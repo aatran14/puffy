@@ -114,7 +114,8 @@ impl Ord for Scored {
 
 // WAL - Write Ahead Log
 
-#[derive(Serialize, Deserialize)]
+// #[derive(Serialize, Deserialize)]
+#[cfg_attr(not(creusot), derive(Serialize, Deserialize))]
 pub struct WalEntry {
     pub seq_no: u64, // unsigned64bit, helpful for monotonically increasing counter, which we can further prove via Creusot is always ordered. The id and the values are the vector data being written.
     pub id: Uuid,
@@ -242,7 +243,6 @@ pub fn compact(wal_files: &[Vec<WalEntry>]) -> Vec<WalEntry> {
     // 1. flatten all the entries into one Vec<WalEntry>
     // 2. deducplicate by id. keep the ntry with the highest seq_no for each UUID.
     // 3. sort by seq_no. 
-    
 
     // 2. probably means use a HashMap for the deudplicate step.
     let mut all: Vec<WalEntry> = Vec::new();
@@ -259,8 +259,22 @@ pub fn compact(wal_files: &[Vec<WalEntry>]) -> Vec<WalEntry> {
             all.push(WalEntry {seq_no: entry.seq_no, id: entry.id, values: entry.values.clone()})
         }
     }
-    all
-}
 
+    let mut map: HashMap<Uuid, WalEntry> = HashMap::new();
+        for entry in all {
+            if let Some(existing) = map.get(&entry.id) {
+                if entry.seq_no > existing.seq_no {
+                    map.insert(entry.id, entry);
+                }
+            } else {
+            map.insert(entry.id, entry);
+            }
+    }
+    // all
+    let mut result: Vec<WalEntry> = map.into_values().collect();
+    result.sort_by_key(|e| e.seq_no);
+    result
+    // map.into_values().collect() // ultimately to pull deudplicated entries otu of the map and into the Vec
+}
 
 

@@ -1,4 +1,4 @@
-use tpuf_v1::{WalBuffer, WalEntry, buffer_write, buffer_flush, Manifest, query, Vector, serialize_wal, deserialize_wal};
+use tpuf_v1::{WalBuffer, WalEntry, buffer_write, buffer_flush, Manifest, query, Vector, serialize_wal, deserialize_wal, compact};
 use uuid::Uuid;
 
 fn main() {
@@ -7,8 +7,6 @@ fn main() {
         pending: Vec::new(),
     };
     
-   
-
     buffer_write(&mut buf, Uuid::new_v4(), vec![1.0, 0.0, 0.0]);
     buffer_write(&mut buf, Uuid::new_v4(), vec![0.0, 1.0, 0.0]);
     buffer_write(&mut buf, Uuid::new_v4(), vec![0.0, 0.0, 1.0]);
@@ -37,5 +35,20 @@ fn main() {
     for r in &results {
         println!("  id: {}, distance: {}", r.id, r.distance);
     }
-    
-  }
+
+    // test compaction. id1 appears in both WAL files, should dedup to seq_no 2
+    let id1 = Uuid::new_v4();
+    let wal1 = vec![
+        WalEntry { seq_no: 0, id: id1, values: vec![1.0, 0.0] },
+        WalEntry { seq_no: 1, id: Uuid::new_v4(), values: vec![0.0, 1.0] },
+    ];
+    let wal2 = vec![
+        WalEntry { seq_no: 2, id: id1, values: vec![9.0, 9.0] },
+    ];
+
+    let compacted = compact(&[wal1, wal2]);
+    println!("compacted: {} entries", compacted.len());
+    for e in &compacted {
+        println!("  seq: {}, id: {}, values: {:?}", e.seq_no, e.id, e.values);
+    }
+}
