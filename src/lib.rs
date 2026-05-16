@@ -196,12 +196,28 @@ pub fn buffer_write(buf: &mut WalBuffer, id: Uuid, values: Vec<f32>) {
   #[requires(buf.pending@.len() > 0)]
   #[trusted] // remove when S3 works
   #[cfg(not(creusot))]
-  pub fn buffer_flush(buf: &mut WalBuffer, manifest: &mut Manifest) {
-      let file_id = Uuid::new_v4();
-      let seq_no = buf.pending.last().unwrap().seq_no;
-      manifest_add(manifest, ManifestEntry { file_id, seq_no });
-      buf.pending.clear();
-  }
+pub async fn buffer_flush(buf: &mut WalBuffer, manifest: &mut Manifest, client: &aws_sdk_s3::Client, bucket: &str, namespace: Uuid) {
+//   pub fn buffer_flush(buf: &mut WalBuffer, manifest: &mut Manifest) {
+    let file_id = Uuid::new_v4();
+
+    let bytes = serialize_wal(&buf.pending);
+    let key = format!(ns/{})
+    client.put_object()
+        .bucket(bucket)
+        .key(&key)
+        .body(bytes.into())
+        .send()
+        .await
+    .unwrap();
+    
+    let seq_no = buf.pending.last().unwrap().seq_no;
+    manifest_add(manifest, ManifestEntry { file_id, seq_no});
+    buf.pending.clear();
+
+
+    manifest_add(manifest, ManifestEntry { file_id, seq_no });
+    buf.pending.clear();
+}
 
   // 
 #[cfg(not(creusot))]
@@ -221,13 +237,13 @@ pub fn query(query: &[f32], buf: &WalBuffer, flushed: &[Vector], k: usize) -> Ve
 }
 
 // serialization to the wal. simple cedes complex.
- #[cfg(not(creusot))]
-  pub fn serialize_wal(entries: &[WalEntry]) -> Vec<u8> {
-      serde_json::to_vec(entries).unwrap()
-  }
+#[cfg(not(creusot))]
+pub fn serialize_wal(entries: &[WalEntry]) -> Vec<u8> {
+    serde_json::to_vec(entries).unwrap()
+}
 
-  #[cfg(not(creusot))]
-  pub fn deserialize_wal(bytes: &[u8]) -> Vec<WalEntry> {
+#[cfg(not(creusot))]
+pub fn deserialize_wal(bytes: &[u8]) -> Vec<WalEntry> {
       serde_json::from_slice(bytes).unwrap()
   }
 
@@ -277,4 +293,9 @@ pub fn compact(wal_files: &[Vec<WalEntry>]) -> Vec<WalEntry> {
     // map.into_values().collect() // ultimately to pull deudplicated entries otu of the map and into the Vec
 }
 
+// buffer_flush needs to actually PUT bytes into S3. It currently does not. Right now, it just clears the buffer
+// 1. serilaize pending entries to bytes (which we have via serialize_wal)
+// 2. PUT those bytes to a prefix on S3
+// 3. update the manifest
 
+// The things to note are that S3 calls are sync- they use await. Meaning buffer_flush needs to become async fn. The same thought applies to main().

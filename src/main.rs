@@ -1,7 +1,8 @@
 use tpuf_v1::{WalBuffer, WalEntry, buffer_write, buffer_flush, Manifest, query, Vector, serialize_wal, deserialize_wal, compact};
 use uuid::Uuid;
 
-fn main() {
+#[tokio::main]
+async fn main() {
     let mut buf = WalBuffer {
         next_seq: 0,
         pending: Vec::new(),
@@ -26,7 +27,13 @@ fn main() {
         values: e.values.clone(),
     }).collect();
 
-    buffer_flush(&mut buf, &mut manifest);
+    // buffer_flush(&mut buf, &mut manifest);
+    let config = aws_config::load_defaults(aws_config::BehaviorVersion::latest()).await;
+    let client = aws_sdk_s3::Client::new(&config);
+    let namespace = manifest.namespace;
+
+    buffer_flush(&mut buf, &mut manifest, &client, "some-bucket-name", namespace).await;
+    //
 
     let q = vec![0.9, 0.1, 0.0];
     let results = query(&q, &buf, &flushed, 2);
