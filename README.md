@@ -1,8 +1,12 @@
 <blockquote>
 - tell me what you know
+
 - tell me what you don't know
+
 - then tell me what you think
+
 - always distinguish which from which
+
 from former secretary state colin powell
 </blockquote>
 
