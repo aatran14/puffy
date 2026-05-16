@@ -1,6 +1,7 @@
 #![cfg_attr(not(creusot), feature(stmt_expr_attributes))]
 #![cfg_attr(not(creusot), feature(proc_macro_hygiene))]
 use serde::{Serialize, Deserialize};
+use std::collections::HashMap;
 
 // need a way to compute how far two vectors are. in a vector db, every search compares a query vector stored against the stored vectors to find knn or some subset of that.
 
@@ -218,7 +219,7 @@ pub fn query(query: &[f32], buf: &WalBuffer, flushed: &[Vector], k: usize) -> Ve
     brute_force_topk(query, &all, k)
 }
 
-// serialization to the wal. simple over complex.
+// serialization to the wal. simple cedes complex.
  #[cfg(not(creusot))]
   pub fn serialize_wal(entries: &[WalEntry]) -> Vec<u8> {
       serde_json::to_vec(entries).unwrap()
@@ -245,8 +246,21 @@ pub fn compact(wal_files: &[Vec<WalEntry>]) -> Vec<WalEntry> {
 
     // 2. probably means use a HashMap for the deudplicate step.
     let mut all: Vec<WalEntry> = Vec::new();
-    for i in 0..wal_files {
-        
+    
+    // for i in 0..wal_files.len(){
+    //     for j in 0..wal_fiels[i].len() {
+    //         all.push(WalEntry { seq_no: wal_files[i][j].seq_no, id: wal_files[i][j].id, values: wal_files[i][j].values.clone() });        
+    //     }
+    // }
+
+    // realized that version did not present the loop as simple as it really is. below is better.
+    for file in wal_files {
+        for entry in file {
+            all.push(WalEntry {seq_no: entry.seq_no, id: entry.id, values: entry.values.clone()})
+        }
     }
+    all
 }
+
+
 
