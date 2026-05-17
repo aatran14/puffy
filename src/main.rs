@@ -32,8 +32,9 @@ async fn main() {
     let client = aws_sdk_s3::Client::new(&config);
     let namespace = manifest.namespace;
 
-    buffer_flush(&mut buf, &mut manifest, &client, "some-bucket-name", namespace).await;
-    //
+    let bucket = std::env::var("PUFFY_BUCKET").expect("set PUFFY_BUCKET env var");
+    buffer_flush(&mut buf, &mut manifest, &client, &bucket, namespace).await;
+    // pls work
 
     let q = vec![0.9, 0.1, 0.0];
     let results = query(&q, &buf, &flushed, 2);
