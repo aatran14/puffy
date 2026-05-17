@@ -201,8 +201,7 @@ pub async fn buffer_flush(buf: &mut WalBuffer, manifest: &mut Manifest, client: 
     let file_id = Uuid::new_v4();
 
     let bytes = serialize_wal(&buf.pending);
-    let key = format!(ns/{})
-    client.put_object()
+    let key = format!("ns/{}/wal/{}.bin", namespace, file_id);    client.put_object()
         .bucket(bucket)
         .key(&key)
         .body(bytes.into())
