@@ -1,7 +1,8 @@
-#![cfg_attr(not(creusot), feature(stmt_expr_attributes))]
 #![cfg_attr(not(creusot), feature(proc_macro_hygiene))]
+#![allow(unused_imports)] // don't forget this future me.
 use serde::{Serialize, Deserialize};
 use std::collections::HashMap;
+use std::sync::Arc;
 
 // need a way to compute how far two vectors are. in a vector db, every search compares a query vector stored against the stored vectors to find knn or some subset of that.
 
@@ -44,6 +45,7 @@ pub struct Vector {
     pub values: Vec<f32>,
 }
 
+#[cfg_attr(not(creusot), derive(Serialize, Deserialize))]
 pub struct QueryResult {
     pub id: Uuid,
     pub distance: f32,
@@ -133,6 +135,7 @@ pub fn wal_append(log: &mut Vec<WalEntry>, entry: WalEntry) {
 // Interesting! Creusot couldn't fully verify the wal_replay without more help. I did see that onl 8/9 goals proved, but one failed.
 // alpha: Need a way to see what is true as each step of the while loop.
 // pub fn wal_replay(log: &mut &[WalEntry]) -> bool { // &[WalEntry] because it only reads the log (chcecks if it sorted)
+#[ensures(result == true ==> forall<j: Int> 1 <= j && j < log@.len() ==> log@[j].seq_no@ > log@[j - 1].seq_no@)]
 pub fn wal_replay(log: &[WalEntry]) -> bool {
     let mut i: usize = 1; // what even is usize and why do we even use it.
 
@@ -165,6 +168,17 @@ pub fn wal_replay(log: &[WalEntry]) -> bool {
       pub files: Vec<ManifestEntry>,
   }
 
+impl Invariant for Manifest { // manifest entries are always ordered by seq_no. the same prop that manifest_add #[requires] currently encorces manally.
+    #[logic]
+    fn invariant(self) -> bool {
+        pearlite! {
+        forall<i: Int, j: Int>
+            0 <= i && i < j && j < self.files@.len() ==>
+            self.files@[i].seq_no@ < self.files@[j].seq_no@
+          }
+      }
+  }
+
 // this annotation says that if the manifest is empty OR the new entry seq_no must be bigger than the last one in the list. 
 #[requires(manifest.files@.len() == 0 || entry.seq_no@ > manifest.files@[manifest.files@.len() - 1].seq_no@)]  
 pub fn manifest_add(manifest: &mut Manifest, entry: ManifestEntry) {
@@ -177,6 +191,21 @@ pub struct WalBuffer {
     pub pending: Vec<WalEntry>, // pending holds entries waiting to be flushed into S3
 }
 
+
+impl Invariant for WalBuffer {  // creusot to assume theinvariant holds when receiving a &mut WalBuffer and check that it sitlll holds when the borrow ends
+      #[logic]
+      fn invariant(self) -> bool {
+          pearlite! {
+              (forall<i: Int, j: Int>
+                  0 <= i && i < j && j < self.pending@.len() ==>
+                  self.pending@[i].seq_no@ < self.pending@[j].seq_no@)
+              &&
+              (self.pending@.len() > 0 ==>
+                  self.next_seq@ > self.pending@[self.pending@.len() - 1].seq_no@)
+          }
+      }
+  }
+
 // buffer_write which takes a &mut WalBuffer, a Uuid and Vec<f32> to create a WalEntry
 // this WalEntry in addition to the current next_seq, which is then pushed into pending and increments next_seq
 // the goal is to get the server to assign sequence numbers. the caller will never touch them.
@@ -184,6 +213,7 @@ pub struct WalBuffer {
 // #[ensures(buf.next_seq@ == old(buf.next_seq@) + 1)] // apparently creusot doesn't use old()
 #[requires(buf.next_seq@ < u64::MAX@)]
 #[ensures((^buf).next_seq@ == (*buf).next_seq@ + 1)]
+#[ensures((^buf).pending@.len() == (*buf).pending@.len() + 1)]
 pub fn buffer_write(buf: &mut WalBuffer, id: Uuid, values: Vec<f32>) {
     let entry = WalEntry {
     seq_no: buf.next_seq,
@@ -356,7 +386,7 @@ pub async fn manifest_read(
     cached_etag: Option<&str>,
 ) -> Option<(Manifest, String)> {
     // GET ns/{namespace}/manifest.json with If-None-Match
-    // if S3 returns 304 (not modified), return None — cached version is still valid
+    // if S3 returns 304 (not modified), return None. cached version is still valid
     // if S3 returns the object, parse JSON into Manifest and return (manifest, etag)
     let key = format!("ns/{}/manifest.json", namespace);
 
@@ -379,24 +409,16 @@ pub async fn manifest_read(
     }
 }
 
-#[cfg(not(creusot))]
-pub async fn handle_write(
-    state: axum::extract::State<AppState>,
-    axum::Json(payload): axum::Json<WriteRequest>,
-) -> impl axum::response::IntoResponse { // looking into impl docs
-    // buffer_write into state.buf
-    // if buf.pending.len() >= threshold, flush
-    // return 200
+#[cfg_attr(not(creusot), derive(Serialize, Deserialize))]
+pub struct WriteRequest {
+    pub id: Uuid,
+    pub values: Vec<f32>,
 }
 
-#[cfg(not(creusot))]
-pub async fn handle_query(
-    state: axum::extract::State<AppState>,
-    axum::Json(payload): axum::Json<QueryRequest>,
-) -> impl axum::response::IntoResponse {
-    // read manifest (consistent read via GET-if-not-match with cached etag)
-    // brute force search in-memory WAL data
-    // return results as JSON
+#[cfg_attr(not(creusot), derive(Serialize, Deserialize))]
+pub struct QueryRequest {
+    pub vector: Vec<f32>,
+    pub k: usize,
 }
 
 #[cfg(not(creusot))]
@@ -410,6 +432,32 @@ pub struct AppState {
     pub namespace: Uuid,
 }
 
+#[cfg(not(creusot))]
+pub async fn handle_write(
+    state: axum::extract::State<Arc<AppState>>,
+    axum::Json(payload): axum::Json<WriteRequest>,
+) -> impl axum::response::IntoResponse { // still looking into impl docs.
+    // buffer_write into state.buf
+    // if buf.pending.len() >= threshold, flush
+    // return 200
+    let mut buf = state.buf.lock().await;
+    buffer_write(&mut buf, payload.id, payload.values);
+    axum::http::StatusCode::OK
+}
+
+#[cfg(not(creusot))]
+pub async fn handle_query(
+    state: axum::extract::State<Arc<AppState>>,
+    axum::Json(payload): axum::Json<QueryRequest>,
+) -> impl axum::response::IntoResponse {
+    // read manifest (consistent read via GET-if-not-match with cached etag)
+    // brute force search in-memory WAL data
+    // return results as JSON
+    let buf = state.buf.lock().await;
+    let flushed = state.flushed.lock().await;
+    let results = query(&payload.vector, &buf, &flushed, payload.k);
+    axum::Json(results)
+}
 
 // NOT crash recovery. nodes are stateless. This is the cold query path:
 // when a query arrives for a namespace that isn't cached, fetch its WAL data from S3
@@ -423,5 +471,19 @@ pub async fn cold_fetch(
     // for each WAL file in manifest.files, fetch_wal from S3
     // convert WalEntries to Vectors
     // return (vectors, manifest, etag)
+    let (manifest, etag) = manifest_read(client, bucket, namespace, None)
+        .await
+        .expect("no manifest found on S3");
+
+    let mut vectors: Vec<Vector> = Vec::new();
+    for file in &manifest.files {
+        let key = format!("ns/{}/wal/{}.bin", namespace, file.file_id);
+        let entries = fetch_wal(client, bucket, &key).await;
+        for entry in entries {
+            vectors.push(Vector { id: entry.id, values: entry.values });
+        }
+    }
+
+    (vectors, manifest, etag)
 }
 
