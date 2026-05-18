@@ -25,13 +25,13 @@ This is a remarkable result. It means a database moves fast because she can prov
 
 ---
 
-In undergrad, I studied Formal Methods wrto model checking over transition systems. Solving problems typically involved using linear temporal logic (LTL) to compute policies that achieve desired properties. Two prevalent ones that come to mind are: reachability and unreachability. Reachability is when the system must reach a target state. Enforcing unreachbility means never reach a bad state. You can imagine that doing this might be useful in a game-theoretic setting, or for an autonomous robot. In finite worlds, you can do this naively by working backwards from target states. This means it even applies to non-deterministic systems.
+In undergrad, I studied Formal Methods wrto model checking over transition systems. Problems typically involved using linear temporal logic (LTL) to compute policies that achieve desired properties. Two prevalent ones that come to mind are: reachability and unreachability. Reachability is when the system must reach a target state. Enforcing unreachbility means never reach a bad state. You can imagine that doing this might be useful in a game-theoretic setting, or for an autonomous robot. In finite worlds, you can do this naively by working backwards from target states. This means it even applies to non-deterministic systems.
 
 For large state spaces, this naive method breaks down, but you at least know the properties exist. There are also infinite state systems. We call this thinking `Büchi Automata`, which operate on infinite words. Think of this as systems that do not aim to terminate. In literature, we discuss  their properties as `Büchi condition`. Thinking in infinite worlds has a lot of consequences, but are important in sympathizing with the finite state results.
 
 To add to my chagrin on this topic, I never bothered to look at the other flavor of formal methods called `deductive verification`. This flavor is where Creusot lives. Think of it as mathematical contracts about code (or even statements).
 
-As a corollary, I will use this project to take some field notes of what I think about Creusot/Rust.
+As a corollary, I will use this investigation to take some field notes of what I think about Creusot/Rust.
 
 1. Quickly learned that creusot doesn’t have support for PartialOrd. It had a PR but it’s from 2023 and its latest comment was from 2025. So that was odd.
 
