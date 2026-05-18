@@ -152,12 +152,14 @@ pub fn wal_replay(log: &[WalEntry]) -> bool {
 }
 
 
-// manifest 
+// manifest
+#[cfg_attr(not(creusot), derive(Serialize, Deserialize))]
  pub struct ManifestEntry {
       pub file_id: Uuid,
       pub seq_no: u64,
   }
 
+#[cfg_attr(not(creusot), derive(Serialize, Deserialize))]
   pub struct Manifest {
       pub namespace: Uuid,
       pub files: Vec<ManifestEntry>,
@@ -295,3 +297,131 @@ pub fn compact(wal_files: &[Vec<WalEntry>]) -> Vec<WalEntry> {
 // 3. update the manifest
 
 // The things to note are that S3 calls are sync- they use await. Meaning buffer_flush needs to become async fn. The same thought applies to main().
+
+
+// fetch from the WAL
+ #[cfg(not(creusot))]
+pub async fn fetch_wal(client: &aws_sdk_s3::Client, bucket: &str, key: &str) -> Vec<WalEntry> {
+    let resp = client.get_object()
+        .bucket(bucket)
+        .key(key)
+        .send()
+        .await
+        .unwrap();
+    let bytes = resp.body.collect().await.unwrap().into_bytes();
+    deserialize_wal(&bytes)
+  }
+
+// major brick building here
+
+#[cfg(not(creusot))]
+pub async fn manifest_save(
+    client: &aws_sdk_s3::Client,
+    bucket: &str,
+    namespace: Uuid,
+    manifest: &Manifest,
+    expected_etag: Option<&str>,
+) -> Result<String, String> {
+    // this function will serialize manifest to JSON
+    // PUT to s3 with If-Match: expected_etag
+    // if no etag (first write), use If-None-Match: *
+    // return new etag on success, error on conflict
+    let body = serde_json::to_vec(manifest).unwrap();
+    let key = format!("ns/{}/manifest.json", namespace);
+
+    let mut req = client.put_object()
+        .bucket(bucket)
+        .key(&key)
+        .body(body.into());
+
+    match expected_etag {
+        Some(etag) => { req = req.if_match(etag); }
+        None => { req = req.if_none_match("*"); }
+    }
+
+    match req.send().await {
+        Ok(output) => {
+            let new_etag = output.e_tag().unwrap_or("").to_string();
+            Ok(new_etag)
+        }
+        Err(e) => Err(e.to_string()),
+    }
+}
+
+#[cfg(not(creusot))]
+pub async fn manifest_read(
+    client: &aws_sdk_s3::Client,
+    bucket: &str,
+    namespace: Uuid,
+    cached_etag: Option<&str>,
+) -> Option<(Manifest, String)> {
+    // GET ns/{namespace}/manifest.json with If-None-Match
+    // if S3 returns 304 (not modified), return None — cached version is still valid
+    // if S3 returns the object, parse JSON into Manifest and return (manifest, etag)
+    let key = format!("ns/{}/manifest.json", namespace);
+
+    let mut req = client.get_object()
+        .bucket(bucket)
+        .key(&key);
+
+    if let Some(etag) = cached_etag {
+        req = req.if_none_match(etag);
+    }
+
+    match req.send().await {
+        Ok(resp) => {
+            let etag = resp.e_tag().unwrap_or("").to_string();
+            let bytes = resp.body.collect().await.unwrap().into_bytes();
+            let manifest: Manifest = serde_json::from_slice(&bytes).unwrap();
+            Some((manifest, etag))
+        }
+        Err(_) => None, // 304 Not Modified or error
+    }
+}
+
+#[cfg(not(creusot))]
+pub async fn handle_write(
+    state: axum::extract::State<AppState>,
+    axum::Json(payload): axum::Json<WriteRequest>,
+) -> impl axum::response::IntoResponse { // looking into impl docs
+    // buffer_write into state.buf
+    // if buf.pending.len() >= threshold, flush
+    // return 200
+}
+
+#[cfg(not(creusot))]
+pub async fn handle_query(
+    state: axum::extract::State<AppState>,
+    axum::Json(payload): axum::Json<QueryRequest>,
+) -> impl axum::response::IntoResponse {
+    // read manifest (consistent read via GET-if-not-match with cached etag)
+    // brute force search in-memory WAL data
+    // return results as JSON
+}
+
+#[cfg(not(creusot))]
+pub struct AppState {
+    pub buf: tokio::sync::Mutex<WalBuffer>,
+    pub manifest: tokio::sync::Mutex<Manifest>,
+    pub manifest_etag: tokio::sync::Mutex<Option<String>>,
+    pub flushed: tokio::sync::Mutex<Vec<Vector>>,
+    pub client: aws_sdk_s3::Client,
+    pub bucket: String,
+    pub namespace: Uuid,
+}
+
+
+// NOT crash recovery. nodes are stateless. This is the cold query path:
+// when a query arrives for a namespace that isn't cached, fetch its WAL data from S3
+#[cfg(not(creusot))]
+pub async fn cold_fetch(
+    client: &aws_sdk_s3::Client,
+    bucket: &str,
+    namespace: Uuid,
+) -> (Vec<Vector>, Manifest, String) {
+    // read manifest from S3 (first read, no cached etag)
+    // for each WAL file in manifest.files, fetch_wal from S3
+    // convert WalEntries to Vectors
+    // return (vectors, manifest, etag)
+}
+
