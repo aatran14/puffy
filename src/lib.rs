@@ -1,8 +1,8 @@
+#![cfg_attr(not(creusot), feature(stmt_expr_attributes))]
 #![cfg_attr(not(creusot), feature(proc_macro_hygiene))]
 #![allow(unused_imports)] // don't forget this future me.
 use serde::{Serialize, Deserialize};
 use std::collections::HashMap;
-use std::sync::Arc;
 
 // need a way to compute how far two vectors are. in a vector db, every search compares a query vector stored against the stored vectors to find knn or some subset of that.
 
@@ -241,13 +241,14 @@ pub async fn buffer_flush(buf: &mut WalBuffer, manifest: &mut Manifest, client: 
         .send()
         .await
         .unwrap();
-
-    let seq_no = buf.pending.last().unwrap().seq_no;
+    let seq_no = buffer_clear(buf);
     manifest_add(manifest, ManifestEntry { file_id, seq_no });
-    buf.pending.clear();
+
+    // let seq_no = buf.pending.last().unwrap().seq_no;
+    // manifest_add(manifest, ManifestEntry { file_id, seq_no });
+    // buf.pending.clear();
 }
 
-  // 
 #[cfg(not(creusot))]
 pub fn query(query: &[f32], buf: &WalBuffer, flushed: &[Vector], k: usize) -> Vec<QueryResult> {
     let mut all: Vec<Vector> = Vec::new();
@@ -327,7 +328,6 @@ pub fn compact(wal_files: &[Vec<WalEntry>]) -> Vec<WalEntry> {
 // 3. update the manifest
 
 // The things to note are that S3 calls are sync- they use await. Meaning buffer_flush needs to become async fn. The same thought applies to main().
-
 
 // fetch from the WAL
  #[cfg(not(creusot))]
@@ -434,7 +434,7 @@ pub struct AppState {
 
 #[cfg(not(creusot))]
 pub async fn handle_write(
-    state: axum::extract::State<Arc<AppState>>,
+    state: axum::extract::State<std::sync::Arc<AppState>>,
     axum::Json(payload): axum::Json<WriteRequest>,
 ) -> impl axum::response::IntoResponse { // still looking into impl docs.
     // buffer_write into state.buf
@@ -447,7 +447,7 @@ pub async fn handle_write(
 
 #[cfg(not(creusot))]
 pub async fn handle_query(
-    state: axum::extract::State<Arc<AppState>>,
+    state: axum::extract::State<std::sync::Arc<AppState>>,
     axum::Json(payload): axum::Json<QueryRequest>,
 ) -> impl axum::response::IntoResponse {
     // read manifest (consistent read via GET-if-not-match with cached etag)
@@ -487,3 +487,14 @@ pub async fn cold_fetch(
     (vectors, manifest, etag)
 }
 
+
+#[requires(buf.pending@.len() > 0)]
+#[ensures((^buf).pending@.len() == 0)]
+#[ensures((^buf).next_seq@ == (*buf).next_seq@)]
+pub fn buffer_clear(buf: &mut WalBuffer) -> u64 {
+    let seq_no = buf.pending[buf.pending.len() - 1].seq_no;
+    let next = buf.next_seq;
+    buf.pending = Vec::new();
+    buf.next_seq = next;
+    seq_no
+}
