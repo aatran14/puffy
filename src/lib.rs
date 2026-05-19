@@ -452,11 +452,28 @@ pub async fn handle_query(
     // read manifest (consistent read via GET-if-not-match with cached etag)
     // brute force search in-memory WAL data
     // return results as JSON
-    let buf = state.buf.lock().await;
-    let flushed = state.flushed.lock().await;
-    let results = query(&payload.vector, &buf, &flushed, payload.k);
-    axum::Json(results)
+    let cached_etag = state.manifest_etag.lock().await.clone();
+    if let Some((new_manifest, new_etag)) = manifest_read(&state.client, &state.bucket, state.namespace, 
+    //cache_etag.deref())
+    cached_etag.as_deref()).await() { // manifest changed, meaning few new WAL data from S3
+        let mut flushed = state.flushed.lock().await;
+        flushed.clear();
+        for file in &new_manifest.files { 
+            let key = format!("ns/{}/wal/{}.bin", state.namespace, file.file_id);
+            let entries = fetch_wal(&state.client, &state.bucket, &key).await;
+              for entry in entries {
+                  flushed.push(Vector { id: entry.id, values: entry.values });
+              }
+        //let buf = state.buf.lock().await;
+    // let flushed = state.flushed.lock().await;
+    // let results = query(&payload.vector, &buf, &flushed, payload.k);
+    // axum::Json(results)
+    }
+    drop(flushed);
+    *state.manifest.lock().await = new_manifest;
+    *state.manifest_etag.lock().await = Some(new_etag);
 }
+
 
 // NOT crash recovery. nodes are stateless. This is the cold query path:
 // when a query arrives for a namespace that isn't cached, fetch its WAL data from S3
