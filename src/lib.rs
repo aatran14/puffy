@@ -3,6 +3,7 @@
 #![allow(unused_imports)] // don't forget this future me.
 use serde::{Serialize, Deserialize};
 use std::collections::HashMap;
+use std::sync::Arc;
 
 // need a way to compute how far two vectors are. in a vector db, every search compares a query vector stored against the stored vectors to find knn or some subset of that.
 
@@ -224,6 +225,17 @@ pub fn buffer_write(buf: &mut WalBuffer, id: Uuid, values: Vec<f32>) {
     buf.next_seq += 1;
 }
 
+#[requires(buf.pending@.len() > 0)]
+#[ensures((^buf).pending@.len() == 0)]
+#[ensures((^buf).next_seq@ == (*buf).next_seq@)]
+pub fn buffer_clear(buf: &mut WalBuffer) -> u64 {
+    let seq_no = buf.pending[buf.pending.len() - 1].seq_no;
+    let next = buf.next_seq;
+    buf.pending = Vec::new();
+    buf.next_seq = next;
+    seq_no
+}
+
 // buffer_flush into s3
   #[requires(buf.pending@.len() > 0)]
   #[trusted] // remove when S3 works
@@ -433,19 +445,6 @@ pub struct AppState {
 }
 
 #[cfg(not(creusot))]
-pub async fn handle_write(
-    state: axum::extract::State<std::sync::Arc<AppState>>,
-    axum::Json(payload): axum::Json<WriteRequest>,
-) -> impl axum::response::IntoResponse { // still looking into impl docs.
-    // buffer_write into state.buf
-    // if buf.pending.len() >= threshold, flush
-    // return 200
-    let mut buf = state.buf.lock().await;
-    buffer_write(&mut buf, payload.id, payload.values);
-    axum::http::StatusCode::OK
-}
-
-#[cfg(not(creusot))]
 pub async fn handle_query(
     state: axum::extract::State<std::sync::Arc<AppState>>,
     axum::Json(payload): axum::Json<QueryRequest>,
@@ -488,13 +487,49 @@ pub async fn cold_fetch(
 }
 
 
-#[requires(buf.pending@.len() > 0)]
-#[ensures((^buf).pending@.len() == 0)]
-#[ensures((^buf).next_seq@ == (*buf).next_seq@)]
-pub fn buffer_clear(buf: &mut WalBuffer) -> u64 {
-    let seq_no = buf.pending[buf.pending.len() - 1].seq_no;
-    let next = buf.next_seq;
-    buf.pending = Vec::new();
-    buf.next_seq = next;
-    seq_no
+// #[requires(buf.pending@.len() > 0)]
+// #[requires(manifest.files@.len() == 0 ||buf.pending@[buf.pending@.len() - 1].seq_no@ > manifest.files@[manifest.files@.len() - 1].seq_no@)] // the last pending entry's seq_no is greater than the last manifest entry's seq_no.
+// #[ensures((^buf).pending@.len() == 0)]
+// #[ensures((^manifest).files@.len() == (*manifest).files@.len() + 1)]
+// #[ensures((^buf).next_seq@ == (*buf).next_seq@)] // removed: testing if this is the stuck goal
+// pub fn buffer_commit(buf: &mut WalBuffer, manifest: &mut Manifest, file_id: Uuid) {
+//     let seq_no = buf.pending[buf.pending.len() - 1].seq_no;
+//     let next = buf.next_seq;
+//     buf.pending = Vec::new();
+//     buf.next_seq = next;
+//     manifest_add(manifest, ManifestEntry {file_id, seq_no});
+// }
+
+// buffer_commit was a hot mess. it took &mut WalBuffer and &mut Manifest in the same function. Two mutable borrrows meant Cruesot had to resolve both at function return. The prover was losing facts about one while reasoning the other. I referenced the docs which warn this, but even with the postconditions, the prover couldn't hold onto the buf states across the manfiest-add call.
+// As a result, I think a rule of thumb is to do one &mut per verified function when possible.
+
+
+#[cfg(not(creusot))]
+pub async fn handle_write(
+    state: axum::extract::State<Arc<AppState>>,
+    axum::Json(payload): axum::Json<WriteRequest>,
+) -> impl axum::response::IntoResponse {
+    let mut buf = state.buf.lock().await;
+    buffer_write(&mut buf, payload.id, payload.values);
+
+    // flush when pending hits threshold
+    if buf.pending.len() >= 10 {
+        let mut manifest = state.manifest.lock().await;
+        
+        // testing copy the pending entries into flushed
+        let mut flushed = state.flushed.lock().await;
+        for entry in &buf.pending {
+        flushed.push(Vector { id: entry.id, values: entry.values.clone() });
+        }
+        drop(flushed);
+        buffer_flush(&mut buf, &mut manifest, &state.client, &state.bucket, state.namespace).await;
+
+        let mut etag = state.manifest_etag.lock().await;
+        match manifest_save(&state.client, &state.bucket, state.namespace, &manifest, etag.as_deref()).await {
+            Ok(new_etag) => { *etag = Some(new_etag); }
+            Err(e) => { eprintln!("manifest CAS failed: {}", e); }
+        }
+    }
+
+    axum::http::StatusCode::OK
 }
