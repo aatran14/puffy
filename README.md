@@ -21,7 +21,7 @@ I know little about Rust. The impetus of this project is that I'm interested in 
 
 This sounds counterinuitive to modern agentic advice. The assymetry lives in the fact that entropy erodes everything, even software. So while agentic outcomes survive by rebirthing itself. Databases on the otherhand live by withstanding the entropy. Take CockroachDB for example. CockroachDB is aptly named because cockroaches don't die.
 
-This is a remarkable result. It means a database moves fast because she can prove the most truths (with pace). If this was not true, then a human could spin up a database architecture agentically overnight and be competitive. But we know this is not true because the opposite phenomenon occurs. The half-baked DB doesn't just die, it gets eaten alive; Agar.io-style.
+This is a remarkable result. It means a database moves fast because she can prove the most truths (with pace). If this was not true, then a human could spin up a database architecture agentically overnight and be competitive. But we know this is not true because the opposite phenomenon occurs. The half-baked DB doesn't just die. It gets eaten alive, so we know formal verification is important in database land.
 
 ---
 
@@ -35,13 +35,15 @@ What we mean by verification is that either
 - the machine M satisfies a property P, in which case we exhaustive trace the actions on every state, 
 - or that program P satisfies a specification S in which all inputs meeting the preconditions and the outputs meet the postcondtitions.
 
-There are a lot of parallels between this. Verification will look different in many forms, but it is fundmentally about safety. There are more, but safety is the property of interest.
+There are a lot of parallels to be drawn and verification will look different in many forms, but it is fundmentally about safety. Safety is usually the property of interest. It answers the generic question: <i>What do I know about the system and what promises can I make? What promises can I <u>not</u> make?</i> Which leaves the remaining ingenuity (by gaussian elimination): <i>What do I think this system is capable of doing? And what should it be capable of doing?</i>
 
-In literature, you might see this called Hoare Logic: {P}C{Q}, meaning to each syntax element of a language, you can prescribe the triple: {P}, the given set of precoditions, after executing compute C, and Q, the set of postconditions which ideally holds.
+So if you build systems reliably by construction, you can isolate the linear combos like this: {<s>what you know</s>, <s>what you don't know</s>, <b>what you think</b>}. This is what we mean by distinguish.
 
-When exercising Creusot, this looks like #[requires] and #[ensures].
+In literature, you might see this called Hoare Logic: {P}C{Q}, meaning to each syntax element of a language, you can prescribe the triple: {P}, the given set of precoditions, and after executing compute C, hold the postconditions Q.
 
-In verification, this is called `weakest precondition calculus`, which Dijkstra worked on. It's similar to model checking recursively from accept states, you can check backwards from postconditions #[ensures(...)] = Q. We call this technique the weakest proondition transformer and in literature, you will see it notated as wp(C, Q). It will give the the weakest precondition where executing C gurantees Q.
+In Creusot, this looks like #[requires] and #[ensures].
+
+In verification, this often takes the form of `weakest precondition calculus`, which Dijkstra worked on. It's similar to model-checking where you can compute recursively from accept states. What you can do is check backwards from postconditions #[ensures(...)] which is Q. We call this technique the weakest proondition transformer and in literature, you will see it notated as wp(C, Q). It will give the the weakest precondition where executing C gurantees Q.
 
 As a corollary, I will use this investigation to take some field notes of what I think about Creusot/Rust.
 
