@@ -37,9 +37,9 @@ What we mean by verification is that either
 
 There are a lot of parallels to be drawn and verification will look different in many forms, but it is fundmentally about safety. Safety is usually the property of interest. It answers the generic question: <i>What do I know about the system and what promises can I make? What promises can I <u>not</u> make?</i> Which leaves the remaining ingenuity (by gaussian elimination): <i>What do I think this system is capable of doing? And what should it be capable of doing?</i>
 
-So if you build systems reliably by construction, you can isolate the linear combos like this: {<s>what you know</s>, <s>what you don't know</s>, <b>what you think</b>}. This is what we mean by distinguish.
+So if you build systems reliably by construction, you can isolate the linear combos like this: {<s>what you know</s>, <s>what you don't know</s>, <b>what you think</b>}. This is what we mean by distinguish and is what offers a greater order of magnitude of improvement in the formal verification sense.
 
-In literature, you might see this called Hoare Logic: {P}C{Q}, meaning to each syntax element of a language, you can prescribe the triple: {P}, the given set of precoditions, and after executing compute C, hold the postconditions Q.
+In literature, you juxtapose this with Hoare Logic: {P}C{Q}, meaning to each syntax element of a language, you can prescribe the triple: {P}, the given set of precoditions, and after executing compute C, hold the postconditions Q.
 
 In Creusot, this looks like #[requires] and #[ensures].
 
